@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🍦 Яке ти морозиво?</title>
+  <meta name="description" content="Весела вікторина для дітей — дізнайся яке ти морозиво! Також оціни своє улюблене морозиво методом drag & drop." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    /* ===== RESET & BASE ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --pink:    #ff6eb4;
+      --purple:  #a855f7;
+      --yellow:  #fbbf24;
+      --mint:    #34d399;
+      --blue:    #60a5fa;
+      --choco:   #a16207;
+      --bg:      #fff8f0;
+      --card:    #ffffff;
+      --shadow:  0 8px 32px rgba(168,85,247,0.13);
+      --radius:  20px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Nunito', sans-serif;
+      background: var(--bg);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ===== FLOATING BACKGROUND BLOBS ===== */
+    .blobs {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.18;
+      animation: blobFloat 8s ease-in-out infinite alternate;
+    }
+    .blob-1 { width: 500px; height: 500px; background: var(--pink);  top: -100px; left: -100px; animation-duration: 9s; }
+    .blob-2 { width: 400px; height: 400px; background: var(--purple); top: 40%; right: -80px; animation-duration: 11s; }
+    .blob-3 { width: 350px; height: 350px; background: var(--yellow); bottom: -80px; left: 30%; animation-duration: 7s; }
+    .blob-4 { width: 300px; height: 300px; background: var(--mint);  top: 60%; left: 10%; animation-duration: 13s; }
+
+    @keyframes blobFloat {
+      from { transform: translate(0, 0) scale(1); }
+      to   { transform: translate(30px, 20px) scale(1.08); }
+    }
+
+    /* ===== NAV ===== */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 2px solid rgba(168,85,247,0.12);
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      height: 64px;
+    }
+    .nav-logo {
+      font-size: 1.6rem;
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--pink), var(--purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      flex: 1;
+    }
+    .nav-btn {
+      padding: 8px 22px;
+      border-radius: 50px;
+      border: none;
+      font-family: 'Nunito', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+    .nav-btn.quiz {
+      background: linear-gradient(135deg, var(--pink), var(--purple));
+      color: #fff;
+    }
+    .nav-btn.rating {
+      background: linear-gradient(135deg, var(--yellow), #f97316);
+      color: #fff;
+    }
+    .nav-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.15); }
+
+    /* ===== PAGES ===== */
+    .page { display: none; position: relative; z-index: 1; }
+    .page.active { display: block; }
+
+    /* ===== HERO ===== */
+    .hero {
+      text-align: center;
+      padding: 60px 20px 30px;
+    }
+    .hero-emoji { font-size: 5rem; display: block; margin-bottom: 16px; animation: bounce 2s ease-in-out infinite; }
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50%       { transform: translateY(-14px); }
+    }
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--pink) 0%, var(--purple) 50%, var(--blue) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 12px;
+    }
+    .hero p {
+      font-size: 1.15rem;
+      color: #7c3aed;
+      max-width: 500px;
+      margin: 0 auto;
+      font-weight: 600;
+    }
+
+    /* ===== QUIZ CONTAINER ===== */
+    .quiz-wrap {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 0 20px 60px;
+    }
+
+    /* Progress bar */
+    .progress-bar-wrap {
+      background: #e9d5ff;
+      border-radius: 50px;
+      height: 14px;
+      margin-bottom: 28px;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      border-radius: 50px;
+      background: linear-gradient(90deg, var(--pink), var(--purple));
+      transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .progress-label {
+      text-align: center;
+      font-weight: 800;
+      color: var(--purple);
+      margin-bottom: 8px;
+      font-size: 0.9rem;
+    }
+
+    /* Question card */
+    .question-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 36px 32px;
+      border: 2px solid rgba(168,85,247,0.1);
+      animation: slideIn 0.4s ease;
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .question-num {
+      font-size: 0.85rem;
+      font-weight: 800;
+      color: var(--pink);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 10px;
+    }
+    .question-text {
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #1e1b4b;
+      margin-bottom: 24px;
+      line-height: 1.4;
+    }
+
+    /* Answers */
+    .answers { display: flex; flex-direction: column; gap: 12px; }
+    .answer-btn {
+      padding: 16px 20px;
+      border-radius: 14px;
+      border: 2.5px solid #e9d5ff;
+      background: #fff;
+      font-family: 'Nunito', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #4c1d95;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.22s ease;
+      line-height: 1.4;
+    }
+    .answer-btn:hover {
+      border-color: var(--purple);
+      background: linear-gradient(135deg, #fdf4ff, #ede9fe);
+      transform: translateX(6px);
+      box-shadow: 0 4px 16px rgba(168,85,247,0.15);
+    }
+    .answer-btn.selected {
+      border-color: var(--pink);
+      background: linear-gradient(135deg, #fff0f7, #fce7f3);
+      color: #9d174d;
+    }
+    .answer-emoji { font-size: 1.2rem; margin-right: 8px; }
+
+    /* Next / Restart */
+    .btn-next {
+      display: block;
+      margin: 24px auto 0;
+      padding: 14px 44px;
+      border-radius: 50px;
+      border: none;
+      background: linear-gradient(135deg, var(--pink), var(--purple));
+      color: #fff;
+      font-family: 'Nunito', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      box-shadow: 0 6px 24px rgba(168,85,247,0.3);
+    }
+    .btn-next:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(168,85,247,0.4); }
+    .btn-next:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    /* ===== RESULT ===== */
+    .result-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 48px 32px;
+      text-align: center;
+      max-width: 560px;
+      margin: 0 auto;
+      border: 3px solid;
+      animation: popIn 0.5s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    @keyframes popIn {
+      from { opacity: 0; transform: scale(0.7); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+    .result-img {
+      width: 180px;
+      height: 180px;
+      object-fit: contain;
+      margin: 0 auto 20px;
+      display: block;
+      animation: wiggle 1.5s ease-in-out infinite alternate;
+    }
+    @keyframes wiggle {
+      from { transform: rotate(-5deg) scale(1); }
+      to   { transform: rotate(5deg) scale(1.05); }
+    }
+    .result-title {
+      font-size: 1.1rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 8px;
+    }
+    .result-name {
+      font-size: 2.5rem;
+      font-weight: 900;
+      margin-bottom: 12px;
+    }
+    .result-desc {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: #6b7280;
+      line-height: 1.5;
+      margin-bottom: 28px;
+    }
+    .result-trait {
+      display: inline-block;
+      padding: 6px 16px;
+      border-radius: 50px;
+      font-weight: 800;
+      font-size: 0.9rem;
+      margin: 4px;
+    }
+
+    /* ===== CONFETTI ===== */
+    .confetti-container {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 200;
+    }
+    .confetti-piece {
+      position: absolute;
+      top: -20px;
+      width: 12px; height: 12px;
+      border-radius: 2px;
+      animation: confettiFall linear forwards;
+    }
+    @keyframes confettiFall {
+      to { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+    }
+
+    /* ===== RATING PAGE ===== */
+    .rating-hero {
+      text-align: center;
+      padding: 50px 20px 20px;
+    }
+    .rating-hero h1 {
+      font-size: clamp(1.8rem, 4vw, 3rem);
+      font-weight: 900;
+      background: linear-gradient(135deg, #f97316, var(--yellow), var(--pink));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 10px;
+    }
+    .rating-hero p { font-size: 1.05rem; color: #92400e; font-weight: 700; }
+
+    .rating-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 28px;
+      max-width: 900px;
+      margin: 30px auto;
+      padding: 0 20px 60px;
+      align-items: start;
+    }
+    @media (max-width: 640px) { .rating-layout { grid-template-columns: 1fr; } }
+
+    .panel {
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 24px;
+      border: 2px solid rgba(168,85,247,0.1);
+    }
+    .panel-title {
+      font-size: 1.1rem;
+      font-weight: 900;
+      color: #1e1b4b;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Source items */
+    .source-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .ice-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 12px 8px;
+      border-radius: 14px;
+      border: 2.5px dashed #e9d5ff;
+      background: #fdf4ff;
+      cursor: grab;
+      transition: all 0.2s ease;
+      user-select: none;
+      touch-action: none;
+    }
+    .ice-item:hover { border-color: var(--purple); background: #ede9fe; transform: scale(1.04); }
+    .ice-item.dragging { opacity: 0.35; cursor: grabbing; }
+    .ice-item img { width: 70px; height: 70px; object-fit: contain; pointer-events: none; }
+    .ice-item span {
+      font-size: 0.78rem;
+      font-weight: 800;
+      color: #4c1d95;
+      text-align: center;
+    }
+
+    /* Drop zones */
+    .rank-list { display: flex; flex-direction: column; gap: 10px; }
+    .rank-slot {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      border-radius: 14px;
+      border: 2.5px dashed #fed7aa;
+      background: #fff7ed;
+      min-height: 90px;
+      transition: all 0.2s ease;
+    }
+    .rank-slot.drag-over {
+      border-color: var(--yellow);
+      background: #fef3c7;
+      transform: scale(1.02);
+      box-shadow: 0 4px 20px rgba(251,191,36,0.3);
+    }
+    .rank-num {
+      font-size: 1.4rem;
+      font-weight: 900;
+      min-width: 36px;
+      text-align: center;
+    }
+    .rank-num.gold   { color: #f59e0b; }
+    .rank-num.silver { color: #94a3b8; }
+    .rank-num.bronze { color: #cd7c39; }
+    .rank-num.other  { color: #c084fc; }
+
+    .rank-content {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+    }
+    .rank-content img { width: 60px; height: 60px; object-fit: contain; }
+    .rank-content span { font-weight: 800; color: #1e1b4b; font-size: 0.9rem; }
+    .rank-placeholder {
+      color: #d1d5db;
+      font-weight: 700;
+      font-size: 0.9rem;
+      font-style: italic;
+    }
+    .rank-remove {
+      margin-left: auto;
+      background: none;
+      border: none;
+      font-size: 1.2rem;
+      cursor: pointer;
+      opacity: 0.4;
+      transition: opacity 0.2s;
+    }
+    .rank-remove:hover { opacity: 1; }
+
+    /* Save & Share */
+    .rating-actions {
+      text-align: center;
+      margin-top: 10px;
+    }
+    .btn-save {
+      padding: 12px 36px;
+      border-radius: 50px;
+      border: none;
+      background: linear-gradient(135deg, var(--yellow), #f97316);
+      color: #fff;
+      font-family: 'Nunito', sans-serif;
+      font-size: 1rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.25s;
+      box-shadow: 0 6px 20px rgba(249,115,22,0.3);
+    }
+    .btn-save:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(249,115,22,0.4); }
+
+    .saved-banner {
+      display: none;
+      margin-top: 16px;
+      padding: 14px 24px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+      color: #065f46;
+      font-weight: 800;
+      font-size: 1rem;
+      animation: popIn 0.4s ease;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 480px) {
+      .question-card { padding: 24px 18px; }
+      .question-text { font-size: 1.15rem; }
+      nav { padding: 0 14px; gap: 8px; }
+      .nav-btn { padding: 7px 14px; font-size: 0.85rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Floating background -->
+<div class="blobs">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+  <div class="blob blob-4"></div>
+</div>
+
+<!-- Confetti container -->
+<div class="confetti-container" id="confettiContainer"></div>
+
+<!-- ===== NAV ===== -->
+<nav>
+  <div class="nav-logo">🍦 Яке ти морозиво?</div>
+  <button class="nav-btn quiz"   onclick="showPage('quiz')"   id="navQuiz">🎯 Вікторина</button>
+  <button class="nav-btn rating" onclick="showPage('rating')" id="navRating">🏆 Рейтинг</button>
+</nav>
+
+<!-- ============================= QUIZ PAGE ============================= -->
+<div class="page active" id="page-quiz">
+  <div class="hero">
+    <span class="hero-emoji">🍦</span>
+    <h1>Яке ти морозиво?</h1>
+    <p>Відповідай чесно — і ми відкриємо твій смак! 😄</p>
+  </div>
+
+  <div class="quiz-wrap">
+    <!-- Progress -->
+    <div class="progress-label" id="progressLabel">Питання 1 з 7</div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar" id="progressBar" style="width:14%"></div>
+    </div>
+
+    <!-- Question card -->
+    <div class="question-card" id="questionCard">
+      <div class="question-num" id="questionNum">Питання 1</div>
+      <div class="question-text" id="questionText">Завантаження...</div>
+      <div class="answers" id="answersContainer"></div>
+      <button class="btn-next" id="btnNext" onclick="nextQuestion()" disabled>Далі →</button>
+    </div>
+
+    <!-- Result (hidden until end) -->
+    <div id="resultSection" style="display:none; padding: 20px 0 60px;">
+      <div class="result-card" id="resultCard">
+        <img id="resultImg" class="result-img" src="" alt="Морозиво" />
+        <div class="result-title" id="resultTitle">Ти — це...</div>
+        <div class="result-name" id="resultName"></div>
+        <div class="result-desc" id="resultDesc"></div>
+        <div id="resultTraits"></div>
+        <br/>
+        <button class="btn-next" onclick="restartQuiz()">🔄 Пройти ще раз</button>
+        <button class="btn-next" style="margin-top:12px; background: linear-gradient(135deg,#fbbf24,#f97316);" onclick="showPage('rating')">🏆 Скласти рейтинг</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================= RATING PAGE ============================= -->
+<div class="page" id="page-rating">
+  <div class="rating-hero">
+    <span class="hero-emoji">🏆</span>
+    <h1>Мій рейтинг морозива</h1>
+    <p>Перетягуй картинки і склади свій особистий топ! 👇</p>
+  </div>
+
+  <div class="rating-layout">
+    <!-- Left: source items -->
+    <div class="panel">
+      <div class="panel-title">🍨 Всі смаки</div>
+      <div class="source-grid" id="sourceGrid"></div>
+    </div>
+
+    <!-- Right: rank slots -->
+    <div>
+      <div class="panel">
+        <div class="panel-title">🥇 Мій топ-6</div>
+        <div class="rank-list" id="rankList"></div>
+      </div>
+      <div class="rating-actions">
+        <br/>
+        <button class="btn-save" onclick="saveRating()">💾 Зберегти рейтинг</button>
+        <div class="saved-banner" id="savedBanner">✅ Рейтинг збережено! Ти справжній експерт з морозива! 🍦</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// =========================================================
+//  DATA
+// =========================================================
+const ICE_CREAMS = [
+  {
+    id: 'chocolate',
+    name: 'Шоколадне',
+    emoji: '🍫',
+    img: 'ice_cream_chocolate.png',
+    color: '#a16207',
+    bgGrad: 'linear-gradient(135deg,#fef3c7,#fde68a)',
+    border: '#f59e0b',
+    desc: 'Ти — справжній класик! Впевнений, сміливий і завжди знаєш чого хочеш. Шоколадне морозиво обирають лідери! 🦁',
+    traits: [
+      { text: '💪 Сміливий', bg:'#fef3c7', color:'#92400e' },
+      { text: '🎯 Впевнений', bg:'#fde68a', color:'#78350f' },
+      { text: '👑 Лідер', bg:'#fbbf24', color:'#fff' },
+    ]
+  },
+  {
+    id: 'strawberry',
+    name: 'Полунично-рожеве',
+    emoji: '🍓',
+    img: 'ice_cream_strawberry.png',
+    color: '#be185d',
+    bgGrad: 'linear-gradient(135deg,#fdf2f8,#fce7f3)',
+    border: '#f472b6',
+    desc: 'Ти — романтик і мрійник! Веселий, добрий і завжди готовий пообіймати друзів. Всі тебе люблять! 🌸',
+    traits: [
+      { text: '🌸 Добрий', bg:'#fce7f3', color:'#9d174d' },
+      { text: '🎀 Ніжний', bg:'#fbcfe8', color:'#831843' },
+      { text: '😊 Веселун', bg:'#f9a8d4', color:'#fff' },
+    ]
+  },
+  {
+    id: 'vanilla',
+    name: 'Ванільне',
+    emoji: '⭐',
+    img: 'ice_cream_vanilla.png',
+    color: '#d97706',
+    bgGrad: 'linear-gradient(135deg,#fffbeb,#fef3c7)',
+    border: '#fbbf24',
+    desc: 'Ти — золотий! Надійний, мудрий і справжній друг на всі 100%. Ванільне — це улюблене морозиво для тих, хто цінує справжнє. ⭐',
+    traits: [
+      { text: '⭐ Мудрий', bg:'#fffbeb', color:'#92400e' },
+      { text: '🤝 Надійний', bg:'#fef3c7', color:'#78350f' },
+      { text: '💛 Щирий', bg:'#fde68a', color:'#fff' },
+    ]
+  },
+  {
+    id: 'mint',
+    name: 'М\'ятне',
+    emoji: '🌿',
+    img: 'ice_cream_mint.png',
+    color: '#065f46',
+    bgGrad: 'linear-gradient(135deg,#ecfdf5,#d1fae5)',
+    border: '#34d399',
+    desc: 'Ти — творча та оригінальна особистість! Любиш пригоди, не боїшся бути несхожим на інших. Ти — справжня суперсила! 🚀',
+    traits: [
+      { text: '🎨 Творчий', bg:'#d1fae5', color:'#065f46' },
+      { text: '🚀 Сміливий', bg:'#a7f3d0', color:'#064e3b' },
+      { text: '✨ Унікальний', bg:'#6ee7b7', color:'#fff' },
+    ]
+  },
+  {
+    id: 'lemon',
+    name: 'Лимонне',
+    emoji: '🍋',
+    img: 'ice_cream_lemon.png',
+    color: '#854d0e',
+    bgGrad: 'linear-gradient(135deg,#fefce8,#fef9c3)',
+    border: '#facc15',
+    desc: 'Ти — бадьорий та енергійний! Весь клас заряджається від тебе. Ти завжди знаходиш вихід з будь-якої ситуації! ⚡',
+    traits: [
+      { text: '⚡ Енергійний', bg:'#fef9c3', color:'#713f12' },
+      { text: '😄 Позитивний', bg:'#fef08a', color:'#78350f' },
+      { text: '🧠 Кмітливий', bg:'#fde047', color:'#fff' },
+    ]
+  },
+  {
+    id: 'rainbow',
+    name: 'Веселковне',
+    emoji: '🌈',
+    img: 'ice_cream_rainbow.png',
+    color: '#6d28d9',
+    bgGrad: 'linear-gradient(135deg,#fdf4ff,#ede9fe)',
+    border: '#a855f7',
+    desc: 'Ти — чарівне диво! У тебе цілий всесвіт ідей і ти вмієш дивуватись і дивувати інших. Справжній магічний зірковий пил! 🌈✨',
+    traits: [
+      { text: '🌈 Мрійник', bg:'#ede9fe', color:'#5b21b6' },
+      { text: '✨ Чарівний', bg:'#ddd6fe', color:'#4c1d95' },
+      { text: '🎭 Артистичний', bg:'#c4b5fd', color:'#fff' },
+    ]
+  },
+];
+
+// =========================================================
+//  QUIZ DATA
+// =========================================================
+const QUESTIONS = [
+  {
+    text: '😴 Ти прокидаєшся вранці і перше, що бачиш — це...?',
+    answers: [
+      { text: '😎 Себе у дзеркалі — виглядаю бомбово!', scores: { chocolate: 3, vanilla: 2 } },
+      { text: '🐱 Кіт сидить на моєму обличчі', scores: { strawberry: 3, rainbow: 2 } },
+      { text: '📱 Телефон — треба перевірити мемчики', scores: { lemon: 3, mint: 2 } },
+      { text: '🍕 Залишки вчорашньої піци — сніданок готовий!', scores: { mint: 3, chocolate: 1 } },
+    ]
+  },
+  {
+    text: '🎒 Що обов\'язково є в твоєму рюкзаку?',
+    answers: [
+      { text: '📚 Всі підручники і навіть зайві — я відмінник!', scores: { vanilla: 3, chocolate: 2 } },
+      { text: '🍫 Шоколадка на чорний день (і ще одна на зовсім чорний)', scores: { chocolate: 3, strawberry: 2 } },
+      { text: '🎨 Скетчбук і 48 різних ручок', scores: { rainbow: 3, mint: 2 } },
+      { text: '❓ А що, треба щось брати? Хм...', scores: { lemon: 3, rainbow: 1 } },
+    ]
+  },
+  {
+    text: '🎮 Яка твоя улюблена гра?',
+    answers: [
+      { text: '⚽ Футбол — і я, звісно, забиваю найбільше голів!', scores: { chocolate: 3, lemon: 2 } },
+      { text: '🎨 Малювати і розмальовувати — це мистецтво!', scores: { rainbow: 3, strawberry: 2 } },
+      { text: '🧩 Пазли — 10 000 деталей, будь ласка', scores: { vanilla: 3, mint: 2 } },
+      { text: '🕹️ Відеоігри — я вже пройшов 5 рівнів поки ти читав це питання', scores: { mint: 3, lemon: 2 } },
+    ]
+  },
+  {
+    text: '🐾 Тебе переслідує небезпечна тварина — равлик! Що робиш?',
+    answers: [
+      { text: '🏃 Тікаю! Ці рогата зі слизом — мій жах!', scores: { strawberry: 3, rainbow: 2 } },
+      { text: '😎 Спокійно. Я йду швидше рівлика, тому в безпеці', scores: { vanilla: 3, chocolate: 1 } },
+      { text: '📸 Фоткаю для Інстаграму — він такий класний!', scores: { rainbow: 3, lemon: 2 } },
+      { text: '🥄 Беру ложку і... ні, жарт. Просто обходжу', scores: { mint: 3, chocolate: 2 } },
+    ]
+  },
+  {
+    text: '🍕 Яку піцу ти б замовив(ла) для всього класу?',
+    answers: [
+      { text: '🍫 Шоколадну піцу з маршмелоу — це реально!', scores: { chocolate: 3, rainbow: 2 } },
+      { text: '🍓 Звичайну, але з купою полуниці зверху', scores: { strawberry: 3, lemon: 1 } },
+      { text: '🤔 Залежить від настрою — спочатку опитаю клас', scores: { vanilla: 3, mint: 2 } },
+      { text: '🌈 Кожен шматок — різного кольору і смаку!', scores: { rainbow: 3, mint: 1 } },
+    ]
+  },
+  {
+    text: '🌦️ Яка погода тобі найбільше підходить?',
+    answers: [
+      { text: '☀️ Сонячна! Я сам(а) — маленьке сонце', scores: { lemon: 3, strawberry: 2 } },
+      { text: '⛈️ Гроза! Блискавки такі красиві!', scores: { mint: 3, rainbow: 2 } },
+      { text: '🌸 Весняна — щоб квіти і метелики навколо', scores: { strawberry: 3, vanilla: 2 } },
+      { text: '❄️ Сніжна — можна ліпити сніговика і прогуляти фізкультуру', scores: { chocolate: 3, mint: 1 } },
+    ]
+  },
+  {
+    text: '🌟 Яким супергероєм ти б хотів(ла) бути?',
+    answers: [
+      { text: '🦸 Таким, що рятує всіх і завжди перемагає!', scores: { chocolate: 3, lemon: 2 } },
+      { text: '🔮 Магом, що може зупинити час і ніколи не спізнюватись', scores: { rainbow: 3, vanilla: 2 } },
+      { text: '🐉 Другом дракона — зрозуміло ж, навіщо!', scores: { mint: 3, rainbow: 1 } },
+      { text: '🥸 Невидимим! Підкрадусь до холодильника о 3 ночі', scores: { strawberry: 3, lemon: 2 } },
+    ]
+  },
+];
+
+// =========================================================
+//  QUIZ LOGIC
+// =========================================================
+let currentQ    = 0;
+let scores      = {};
+let selectedAns = null;
+
+ICE_CREAMS.forEach(ic => { scores[ic.id] = 0; });
+
+function renderQuestion() {
+  const q = QUESTIONS[currentQ];
+  document.getElementById('questionNum').textContent  = `Питання ${currentQ + 1}`;
+  document.getElementById('questionText').textContent = q.text;
+  document.getElementById('progressLabel').textContent = `Питання ${currentQ + 1} з ${QUESTIONS.length}`;
+  document.getElementById('progressBar').style.width   = `${((currentQ + 1) / QUESTIONS.length) * 100}%`;
+
+  const container = document.getElementById('answersContainer');
+  container.innerHTML = '';
+  selectedAns = null;
+  document.getElementById('btnNext').disabled = true;
+
+  q.answers.forEach((ans, idx) => {
+    const btn = document.createElement('button');
+    btn.className   = 'answer-btn';
+    btn.id          = `ans-${idx}`;
+    btn.innerHTML   = `<span class="answer-emoji">${['🅰️','🅱️','🇨','🇩'][idx]}</span>${ans.text}`;
+    btn.onclick = () => selectAnswer(idx);
+    container.appendChild(btn);
+  });
+}
+
+function selectAnswer(idx) {
+  document.querySelectorAll('.answer-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById(`ans-${idx}`).classList.add('selected');
+  selectedAns = idx;
+  document.getElementById('btnNext').disabled = false;
+}
+
+function nextQuestion() {
+  if (selectedAns === null) return;
+
+  // Add scores
+  const ans = QUESTIONS[currentQ].answers[selectedAns];
+  for (const [id, val] of Object.entries(ans.scores)) {
+    scores[id] = (scores[id] || 0) + val;
+  }
+
+  currentQ++;
+  if (currentQ < QUESTIONS.length) {
+    document.getElementById('questionCard').style.animation = 'none';
+    setTimeout(() => {
+      document.getElementById('questionCard').style.animation = 'slideIn 0.4s ease';
+      renderQuestion();
+    }, 50);
+  } else {
+    showResult();
+  }
+}
+
+function showResult() {
+  // Find winner
+  let best = null, bestScore = -1;
+  for (const [id, val] of Object.entries(scores)) {
+    if (val > bestScore) { bestScore = val; best = id; }
+  }
+  const ice = ICE_CREAMS.find(i => i.id === best);
+
+  document.getElementById('questionCard').style.display = 'none';
+  document.getElementById('progressLabel').style.display = 'none';
+  document.querySelector('.progress-bar-wrap').style.display = 'none';
+
+  const resultSection = document.getElementById('resultSection');
+  resultSection.style.display = 'block';
+
+  const card = document.getElementById('resultCard');
+  card.style.borderColor = ice.border;
+  card.style.background  = ice.bgGrad;
+
+  document.getElementById('resultImg').src  = ice.img;
+  document.getElementById('resultImg').alt  = ice.name;
+  document.getElementById('resultTitle').style.color = ice.color;
+  document.getElementById('resultTitle').textContent = 'Ти — це...';
+  document.getElementById('resultName').textContent  = `${ice.emoji} ${ice.name}`;
+  document.getElementById('resultName').style.color  = ice.color;
+  document.getElementById('resultDesc').textContent  = ice.desc;
+
+  const traitsWrap = document.getElementById('resultTraits');
+  traitsWrap.innerHTML = '';
+  ice.traits.forEach(t => {
+    const span = document.createElement('span');
+    span.className = 'result-trait';
+    span.style.background = t.bg;
+    span.style.color       = t.color;
+    span.textContent       = t.text;
+    traitsWrap.appendChild(span);
+  });
+
+  launchConfetti();
+}
+
+function restartQuiz() {
+  currentQ    = 0;
+  selectedAns = null;
+  scores      = {};
+  ICE_CREAMS.forEach(ic => { scores[ic.id] = 0; });
+
+  document.getElementById('resultSection').style.display = 'none';
+  document.getElementById('questionCard').style.display  = 'block';
+  document.getElementById('progressLabel').style.display = 'block';
+  document.querySelector('.progress-bar-wrap').style.display = 'block';
+  renderQuestion();
+}
+
+// =========================================================
+//  CONFETTI
+// =========================================================
+function launchConfetti() {
+  const container = document.getElementById('confettiContainer');
+  container.innerHTML = '';
+  const colors = ['#ff6eb4','#a855f7','#fbbf24','#34d399','#60a5fa','#f97316','#ec4899'];
+  for (let i = 0; i < 80; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    el.style.left     = Math.random() * 100 + 'vw';
+    el.style.background = colors[Math.floor(Math.random() * colors.length)];
+    el.style.width    = (Math.random() * 12 + 6) + 'px';
+    el.style.height   = el.style.width;
+    el.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+    el.style.animationDuration = (Math.random() * 2 + 1.5) + 's';
+    el.style.animationDelay   = (Math.random() * 1.5) + 's';
+    container.appendChild(el);
+    setTimeout(() => el.remove(), 4000);
+  }
+}
+
+// =========================================================
+//  RATING / DRAG & DROP
+// =========================================================
+const RANK_COUNT = 6;
+let rankSlots    = new Array(RANK_COUNT).fill(null); // each: ice id or null
+let dragItem     = null; // { id, fromSlot: null|index }
+
+function buildRatingPage() {
+  buildSourceGrid();
+  buildRankSlots();
+}
+
+function buildSourceGrid() {
+  const grid = document.getElementById('sourceGrid');
+  grid.innerHTML = '';
+  ICE_CREAMS.forEach(ice => {
+    const div = document.createElement('div');
+    div.className  = 'ice-item';
+    div.id         = `src-${ice.id}`;
+    div.draggable  = true;
+    div.innerHTML  = `<img src="${ice.img}" alt="${ice.name}" /><span>${ice.emoji} ${ice.name}</span>`;
+
+    // Desktop drag events
+    div.addEventListener('dragstart', e => {
+      dragItem = { id: ice.id, fromSlot: null };
+      div.classList.add('dragging');
+      e.dataTransfer.setData('text/plain', ice.id);
+    });
+    div.addEventListener('dragend', () => div.classList.remove('dragging'));
+
+    // Touch events
+    div.addEventListener('touchstart', e => touchStart(e, ice.id, null), { passive: true });
+
+    grid.appendChild(div);
+  });
+}
+
+function buildRankSlots() {
+  const list = document.getElementById('rankList');
+  list.innerHTML = '';
+  const medals = ['🥇','🥈','🥉','4️⃣','5️⃣','6️⃣'];
+  const numClass = ['gold','silver','bronze','other','other','other'];
+
+  for (let i = 0; i < RANK_COUNT; i++) {
+    const slot = document.createElement('div');
+    slot.className = 'rank-slot';
+    slot.id = `slot-${i}`;
+    slot.dataset.idx = i;
+
+    const numSpan = document.createElement('span');
+    numSpan.className = `rank-num ${numClass[i]}`;
+    numSpan.textContent = medals[i];
+
+    const content = document.createElement('div');
+    content.className = 'rank-content';
+    content.id = `slot-content-${i}`;
+
+    slot.appendChild(numSpan);
+    slot.appendChild(content);
+
+    // Drop events (desktop)
+    slot.addEventListener('dragover', e => { e.preventDefault(); slot.classList.add('drag-over'); });
+    slot.addEventListener('dragleave', () => slot.classList.remove('drag-over'));
+    slot.addEventListener('drop',  e => { e.preventDefault(); slot.classList.remove('drag-over'); dropIntoSlot(i); });
+
+    // Touch drop
+    slot.addEventListener('touchend', e => touchEndOnSlot(e, i));
+
+    list.appendChild(slot);
+    renderSlot(i);
+  }
+}
+
+function renderSlot(i) {
+  const content = document.getElementById(`slot-content-${i}`);
+  if (!content) return;
+  content.innerHTML = '';
+  const id = rankSlots[i];
+  if (!id) {
+    content.innerHTML = `<span class="rank-placeholder">Перетягни морозиво сюди...</span>`;
+    return;
+  }
+  const ice = ICE_CREAMS.find(ic => ic.id === id);
+  content.innerHTML = `<img src="${ice.img}" alt="${ice.name}"/><span>${ice.emoji} ${ice.name}</span>`;
+
+  const removeBtn = document.createElement('button');
+  removeBtn.className   = 'rank-remove';
+  removeBtn.textContent = '✕';
+  removeBtn.title = 'Прибрати';
+  removeBtn.onclick = () => { rankSlots[i] = null; renderSlot(i); updateSourceVis(); };
+  content.appendChild(removeBtn);
+}
+
+function dropIntoSlot(slotIdx) {
+  if (!dragItem) return;
+  const { id, fromSlot } = dragItem;
+
+  // If from another slot, clear that slot
+  if (fromSlot !== null) {
+    rankSlots[fromSlot] = null;
+    renderSlot(fromSlot);
+  }
+
+  // If slot already has something, return it to palette
+  // (just swap — we clear the old one)
+  const prev = rankSlots[slotIdx];
+  rankSlots[slotIdx] = id;
+  renderSlot(slotIdx);
+  updateSourceVis();
+  dragItem = null;
+}
+
+function updateSourceVis() {
+  const usedIds = rankSlots.filter(Boolean);
+  ICE_CREAMS.forEach(ice => {
+    const el = document.getElementById(`src-${ice.id}`);
+    if (!el) return;
+    if (usedIds.includes(ice.id)) {
+      el.style.opacity = '0.3';
+      el.draggable = false;
+      el.style.pointerEvents = 'none';
+    } else {
+      el.style.opacity = '1';
+      el.draggable = true;
+      el.style.pointerEvents = 'auto';
+    }
+  });
+}
+
+// Also allow dragging from rank slot back / to another slot
+function setupSlotDrag(slotIdx) {
+  const content = document.getElementById(`slot-content-${slotIdx}`);
+  if (!content || !rankSlots[slotIdx]) return;
+
+  const inner = content.querySelector('img');
+  if (!inner) return;
+
+  const parent = content.parentElement;
+  parent.draggable = true;
+  parent.ondragstart = e => {
+    dragItem = { id: rankSlots[slotIdx], fromSlot: slotIdx };
+    e.dataTransfer.setData('text/plain', rankSlots[slotIdx]);
+  };
+  parent.ondragend = () => { parent.draggable = false; };
+}
+
+// =========================================================
+//  TOUCH DRAG & DROP
+// =========================================================
+let touchIce   = null;
+let touchGhost = null;
+
+function touchStart(e, iceId, fromSlot) {
+  touchIce = { id: iceId, fromSlot };
+  dragItem  = { id: iceId, fromSlot };
+
+  // Create ghost
+  const src = document.getElementById(`src-${iceId}`);
+  if (!src) return;
+
+  touchGhost = src.cloneNode(true);
+  touchGhost.style.position   = 'fixed';
+  touchGhost.style.width      = '80px';
+  touchGhost.style.zIndex     = '999';
+  touchGhost.style.pointerEvents = 'none';
+  touchGhost.style.opacity    = '0.85';
+  touchGhost.style.borderRadius = '14px';
+  touchGhost.style.background = '#ede9fe';
+  touchGhost.style.padding    = '8px';
+  touchGhost.style.transform  = 'scale(1.1)';
+  document.body.appendChild(touchGhost);
+
+  document.addEventListener('touchmove', touchMove, { passive: false });
+  document.addEventListener('touchend',  touchEnd);
+}
+
+function touchMove(e) {
+  if (!touchGhost) return;
+  e.preventDefault();
+  const t = e.touches[0];
+  touchGhost.style.left = (t.clientX - 40) + 'px';
+  touchGhost.style.top  = (t.clientY - 40) + 'px';
+}
+
+function touchEnd(e) {
+  if (!touchGhost) return;
+  const t = e.changedTouches[0];
+
+  // Find which slot we're over
+  for (let i = 0; i < RANK_COUNT; i++) {
+    const slot = document.getElementById(`slot-${i}`);
+    if (!slot) continue;
+    const rect = slot.getBoundingClientRect();
+    if (t.clientX >= rect.left && t.clientX <= rect.right &&
+        t.clientY >= rect.top  && t.clientY <= rect.bottom) {
+      dropIntoSlot(i);
+      break;
+    }
+  }
+
+  document.body.removeChild(touchGhost);
+  touchGhost = null;
+  touchIce   = null;
+  dragItem   = null;
+  document.removeEventListener('touchmove', touchMove);
+  document.removeEventListener('touchend',  touchEnd);
+}
+
+function touchEndOnSlot(e, slotIdx) {
+  // handled in global touchEnd
+}
+
+// =========================================================
+//  SAVE RATING
+// =========================================================
+function saveRating() {
+  const filled = rankSlots.filter(Boolean);
+  if (filled.length === 0) {
+    alert('Спочатку додай хоча б одне морозиво до рейтингу! 🍦');
+    return;
+  }
+  // Build summary text
+  const medals = ['🥇','🥈','🥉','4️⃣','5️⃣','6️⃣'];
+  let text = '🏆 Мій рейтинг морозива:\n';
+  rankSlots.forEach((id, i) => {
+    if (id) {
+      const ice = ICE_CREAMS.find(ic => ic.id === id);
+      text += `${medals[i]} ${ice.emoji} ${ice.name}\n`;
+    }
+  });
+  console.log(text);
+
+  const banner = document.getElementById('savedBanner');
+  banner.style.display = 'block';
+  setTimeout(() => { banner.style.display = 'none'; }, 3500);
+  launchConfetti();
+}
+
+// =========================================================
+//  PAGE NAVIGATION
+// =========================================================
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(`page-${name}`).classList.add('active');
+}
+
+// =========================================================
+//  INIT
+// =========================================================
+renderQuestion();
+buildRatingPage();
+</script>
+</body>
+</html>
